@@ -8,6 +8,7 @@ public struct Prompt {
         case llama3
         case mistral
         case phi
+        case playerControl
     }
 
     public let type: `Type`
@@ -33,6 +34,7 @@ public struct Prompt {
         case .chatML: encodeChatMLPrompt()
         case .mistral: encodeMistralPrompt()
         case .phi: encodePhiPrompt()
+        case .playerControl: encodePlayerControlPrompt()
         }
     }
 
@@ -95,6 +97,15 @@ public struct Prompt {
         \(userMessage)
         <|end|>
         <|assistant|>
+        """
+    }
+
+    private func encodePlayerControlPrompt() -> String {
+        """
+        \(systemPrompt)
+        ### 文本:
+        \(userMessage)
+        ### 行为:
         """
     }
 }
