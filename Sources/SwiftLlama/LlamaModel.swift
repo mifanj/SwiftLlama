@@ -67,6 +67,15 @@ class LlamaModel {
         generatedTokenAccount = batch.n_tokens
     }
 
+
+    func validateUTF8String(from cChars: [CChar]) -> String? {
+        let data = Data(cChars.map { UInt8($0) })
+        guard let validString = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        return validString
+    }
+
     func `continue`() throws -> String {
         let newToken =  llama_sampler_sample(sampler, context, batch.n_tokens - 1)
 
@@ -81,16 +90,29 @@ class LlamaModel {
         temporaryInvalidCChars.append(contentsOf: newTokenCChars)
 
         let newTokenStr: String
-        if let validString = String(validating: temporaryInvalidCChars + [0], as: UTF8.self) {
-            newTokenStr = validString
-            temporaryInvalidCChars.removeAll()
-        } else if let suffixIndex = temporaryInvalidCChars.firstIndex(where: { $0 != 0 }),
-                  let validSuffix = String(validating: Array(temporaryInvalidCChars.suffix(from: suffixIndex)) + [0],
-                                           as: UTF8.self) {
-            newTokenStr = validSuffix
-            temporaryInvalidCChars.removeAll()
+        if #available(iOS 18.0, *) {
+            if let validString = String(validating: temporaryInvalidCChars + [0], as: UTF8.self) {
+                newTokenStr = validString
+                temporaryInvalidCChars.removeAll()
+            } else if let suffixIndex = temporaryInvalidCChars.firstIndex(where: { $0 != 0 }),
+                    let validSuffix = String(validating: Array(temporaryInvalidCChars.suffix(from: suffixIndex)) + [0],
+                                            as: UTF8.self) {
+                newTokenStr = validSuffix
+                temporaryInvalidCChars.removeAll()
+            } else {
+                newTokenStr = ""
+            }
         } else {
-            newTokenStr = ""
+            if let validString = validateUTF8String(from: temporaryInvalidCChars + [0]) {
+                newTokenStr = validString
+                temporaryInvalidCChars.removeAll()
+            } else if let suffixIndex = temporaryInvalidCChars.firstIndex(where: { $0 != 0 }),
+                    let validSuffix = validateUTF8String(from: Array(temporaryInvalidCChars.suffix(from: suffixIndex)) + [0]) {
+                newTokenStr = validSuffix
+                temporaryInvalidCChars.removeAll()
+            } else {
+                newTokenStr = ""
+            }
         }
 
         batch.clear()
