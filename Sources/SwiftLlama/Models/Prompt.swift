@@ -9,6 +9,7 @@ public struct Prompt {
         case mistral
         case phi
         case playerControl
+        case playerControlV2
     }
 
     public let type: `Type`
@@ -35,6 +36,7 @@ public struct Prompt {
         case .mistral: encodeMistralPrompt()
         case .phi: encodePhiPrompt()
         case .playerControl: encodePlayerControlPrompt()
+        case .playerControlV2: encodePlayerControlPromptV2()
         }
     }
 
@@ -106,6 +108,15 @@ public struct Prompt {
         ### 文本:
         \(userMessage)
         ### 行为:
+        """
+    }
+
+    private func encodePlayerControlPromptV2() -> String {
+        """
+        \(systemPrompt)
+        ### 文本:
+        \(userMessage)
+        ### 输出:
         """
     }
 }
